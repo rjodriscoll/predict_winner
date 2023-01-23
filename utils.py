@@ -12,7 +12,6 @@ def generate_dataset(rider_dir: str):
             df = df[['team', 'dob', 'country', 'height', 'weight',
                      'one_day_races', 'gc', 'time_trial', 'sprint', 'climber', 'uci_world',
                      'pcs_ranking',
-
                      'distance', 'race_category', 'points_scale', 'uci_scale', 'parcours_type',
                      'profilescore', 'vert._meters', 'race_ranking',
                      'startlist_quality_score', 'stage_number', 'day', 'month',
@@ -22,6 +21,7 @@ def generate_dataset(rider_dir: str):
             dfs.append(df)
 
     return pd.concat(dfs)
+
 
 def test_train_validation_split(rider_dir: str):
     if not os.path.exists('data'):
@@ -41,3 +41,22 @@ def test_train_validation_split(rider_dir: str):
     train.to_csv('data/train/train.csv')
     val.to_csv('data/validation/val.csv')
     test.to_csv('data/test/test.csv')
+
+
+def preprocess_categorical(df):
+    df = df.copy()
+    for col in df.columns:
+        if df[col].dtype == 'object':
+            df[col] = df[col].fillna(df[col].value_counts().idxmax())
+            df[col] = pd.get_dummies(df[col])
+    return df
+
+def preprocess_numerical(df):
+    df = df.copy()
+    for col in df.columns:
+        if df[col].dtype != 'object':
+            df[col] = df[col].fillna(df[col].max())
+    return df
+
+def preprocess_all(df):
+    return preprocess_categorical(preprocess_numerical(df))
