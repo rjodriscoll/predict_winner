@@ -1,6 +1,14 @@
+
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
+import numpy as np
+
+
+def assign_y(df):
+    df['podium'] = np.where(df['result'] <= 3, 1, 0)
+    df = df.drop('result', axis = 1)
+    return df
 
 
 def generate_dataset(rider_dir: str):
@@ -9,16 +17,12 @@ def generate_dataset(rider_dir: str):
         path = f"{rider_dir}/{d}/processed_race_data.csv"
         if os.path.exists(path):
             df = pd.read_csv(path)
-            df = df[['team', 'dob', 'country', 'height', 'weight',
-                     'one_day_races', 'gc', 'time_trial', 'sprint', 'climber', 'uci_world',
-                     'pcs_ranking',
-                     'distance', 'race_category', 'points_scale', 'uci_scale', 'parcours_type',
-                     'profilescore', 'vert._meters', 'race_ranking',
-                     'startlist_quality_score', 'stage_number', 'day', 'month',
-                     'year', 'time_since_last_race', 'race_days_this_year',
-                     'profile_score_vert_ratio', 'best_result_this_year',
-                     'best_result_similar_races', 'result']]
+            
+            df = preprocess_all(df)
+            df= assign_y(df)
             dfs.append(df)
+
+            
 
     return pd.concat(dfs)
 
@@ -38,9 +42,9 @@ def test_train_validation_split(rider_dir: str):
     nt = data[int(len(data) * 0.8):]
     val, test = train_test_split(nt, train_size=0.5, shuffle=True)
 
-    train.to_csv('data/train/train.csv')
-    val.to_csv('data/validation/val.csv')
-    test.to_csv('data/test/test.csv')
+    train.to_csv('data/train/train.csv', index=False)
+    val.to_csv('data/validation/val.csv', index=False)
+    test.to_csv('data/test/test.csv', index=False)
 
 
 def preprocess_categorical(df):
@@ -48,15 +52,20 @@ def preprocess_categorical(df):
     for col in df.columns:
         if df[col].dtype == 'object':
             df[col] = df[col].fillna(df[col].value_counts().idxmax())
-            df[col] = pd.get_dummies(df[col])
+            df = pd.concat([df, pd.get_dummies(
+                df[col], prefix=col, prefix_sep='_', dummy_na=False, columns=None)], axis=1)
+            df.drop(col, axis=1, inplace=True)
     return df
+
 
 def preprocess_numerical(df):
     df = df.copy()
-    for col in df.columns:
+    for col in [col for col in df.columns if col not in ['podium', 'result']]:
         if df[col].dtype != 'object':
             df[col] = df[col].fillna(df[col].max())
     return df
 
+
 def preprocess_all(df):
-    return preprocess_categorical(preprocess_numerical(df))
+    df= preprocess_categorical(preprocess_numerical(df))
+    return df 
