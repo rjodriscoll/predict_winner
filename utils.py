@@ -24,7 +24,7 @@ def generate_dataset(rider_dir: str):
     return pd.concat(dfs)
 
 
-def test_train_validation_split(rider_dir: str):
+def test_train_validation_split(rider_dir: str, train_size=0.8):
     if not os.path.exists('data'):
         os.mkdir('data')
 
@@ -34,11 +34,13 @@ def test_train_validation_split(rider_dir: str):
 
     data = generate_dataset(rider_dir)
     data = data.sort_values(by=['year', 'month', 'day'])
-    train, test = train_test_split(data, train_size=0.8)
-    train = data[:int(len(data) * 0.8)]
-    nt = data[int(len(data) * 0.8):]
+    train, test = train_test_split(data, train_size=train_size)
+    train = data[:int(len(data) * train_size)]
+    nt = data[int(len(data) * train_size):]
     val, test = train_test_split(nt, train_size=0.5, shuffle=True)
 
     train.to_csv('data/train/train.csv', index=False)
     val.to_csv('data/validation/val.csv', index=False)
     test.to_csv('data/test/test.csv', index=False)
+
+
