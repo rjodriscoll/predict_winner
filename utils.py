@@ -3,7 +3,8 @@ import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
 import numpy as np
-
+from sklearn.base import BaseEstimator, TransformerMixin
+from datetime import datetime
 
 def assign_y(df):
     df['podium'] = np.where(df['result'] <= 3, 1, 0)
@@ -44,3 +45,12 @@ def test_train_validation_split(rider_dir: str, train_size=0.8):
     test.to_csv('data/test/test.csv', index=False)
 
 
+
+
+class AgeCalculator(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        return self
+    
+    def transform(self, X, y=None):
+        X['age'] = X['year'] - pd.to_datetime(X['dob']).dt.year
+        return X
